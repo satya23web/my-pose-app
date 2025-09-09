@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Real-Time Pose Practice</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background-color: #f0f0f0; }
+        #container { display: flex; gap: 20px; }
+        #video, #processed_frame { border: 2px solid #333; border-radius: 8px; }
+        h2 { text-align: center; color: #555; }
+    </style>
+</head>
+<body>
+    <h1>Real-Time Pose Practice</h1>
+    <div id="container">
+        <div>
+            <h2>Your Live Camera</h2>
+            <video id="video" width="640" height="480" autoplay playsinline></video>
+        </div>
+        <div>
+            <h2>Processed Output</h2>
+            <img id="processed_frame" width="640" height="480">
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const processedFrame = document.getElementById('processed_frame');
+        
+        // Get the video_id from the URL (e.g., /practice/my_video -> "my_video")
+        const video_id = window.location.pathname.split('/').pop();
+        const ws = new WebSocket(`ws://${window.location.host}/ws/${video_id}`);
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => { video.srcObject = stream; })
+            .catch(err => { alert("Could not access webcam."); });
+
+        const sendFrame = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(canvas.toDataURL('image/jpeg'));
+            }
+        };
+
+        ws.onopen = () => { setInterval(sendFrame, 40); };
+        ws.onmessage = (event) => { processedFrame.src = event.data; };
+    </script>
+</body>
+</html>

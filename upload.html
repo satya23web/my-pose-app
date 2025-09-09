@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload a Reference Video</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding-top: 50px; }
+        #message { margin-top: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Create a New Pose</h1>
+    <p>Upload a video file (.mp4) to generate a new ragdoll for practice.</p>
+    <form id="uploadForm">
+        <input type="file" id="videoFile" name="file" accept="video/mp4">
+        <button type="submit">Upload and Process</button>
+    </form>
+    <div id="message"></div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const messageDiv = document.getElementById('message');
+            const fileInput = document.getElementById('videoFile');
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            messageDiv.textContent = 'Uploading and processing... This may take a moment.';
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    const practiceUrl = `/practice/${result.video_id}`;
+                    messageDiv.innerHTML = `Success! Your practice session is ready. <a href="${practiceUrl}">Click here to start practicing!</a>`;
+                } else {
+                    messageDiv.textContent = 'An error occurred during processing.';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                messageDiv.textContent = 'Upload failed.';
+            }
+        });
+    </script>
+</body>
+</html>
